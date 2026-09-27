@@ -1,0 +1,649 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LiftLeague</title>
+<meta name="description" content="ליגת כוח — התקדמות מדודה, תחרות הוגנת מול הרמה שלך.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root{
+  color-scheme: dark;
+  --bg:#0a0e18; --surface:#121829; --surface2:#1a2133; --line:#252d42;
+  --text:#eef2fb; --muted:#8b95ad; --faint:#5c6580;
+  --accent:#c8ff2e;            /* lime — primary action / you */
+  --level:#a78bfa;             /* violet — strength level */
+  --improve:#38e0d6;           /* cyan — improvement */
+  --consist:#f5a524;           /* amber — consistency */
+  --promo:#34d399; --releg:#fb7185;
+  --disp:'Anton', 'Arial Narrow', sans-serif;
+  --ui:'Sora', system-ui, sans-serif;
+  --mono:'JetBrains Mono', ui-monospace, monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--ui);
+  font-size:15px; line-height:1.5; -webkit-tap-highlight-color:transparent;
+  direction:rtl; text-align:right; overflow-x:hidden;
+}
+#app{display:flex;flex-direction:column;height:100%;max-width:520px;margin:0 auto;position:relative;background:var(--bg);overflow-x:hidden}
+button{font-family:inherit;color:inherit;cursor:pointer}
+h1,h2,h3{margin:0}
+.disp{font-family:var(--disp);font-weight:400;letter-spacing:.5px;line-height:.95}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .faint{color:var(--faint)}
+
+/* ---------- top bar ---------- */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:linear-gradient(180deg,var(--bg),rgba(10,14,24,.85));
+  padding:14px 18px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:9px}
+.brand .logo{width:30px;height:30px;display:grid;place-items:center;background:var(--accent);border-radius:8px;color:#0a0e18}
+.brand .name{font-family:var(--disp);font-size:22px;letter-spacing:1px}
+.brand .name em{color:var(--accent);font-style:normal}
+.tierpill{font-size:11px;padding:4px 10px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);color:var(--muted);display:flex;gap:6px;align-items:center}
+
+/* ---------- scroll area ---------- */
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px 96px;-webkit-overflow-scrolling:touch}
+.screen[hidden]{display:none!important}
+section{margin-bottom:18px}
+.eyebrow{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--faint);margin-bottom:8px;font-weight:600}
+
+/* ---------- cards ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px}
+.card.tight{padding:13px}
+
+/* ---------- hero score ---------- */
+.hero{background:radial-gradient(120% 120% at 85% 0%,rgba(200,255,46,.10),transparent 55%),var(--surface);
+  border:1px solid var(--line);border-radius:20px;padding:18px;position:relative;overflow:hidden}
+.hero .row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.scoreBig{font-family:var(--disp);font-size:74px;line-height:.8;color:var(--accent)}
+.scoreBig small{font-size:18px;color:var(--muted);font-family:var(--ui);font-weight:600}
+.posbox{text-align:center;background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:10px 14px;min-width:96px}
+.posbox .p{font-family:var(--disp);font-size:34px;line-height:1}
+.posbox .of{font-size:11px;color:var(--muted)}
+.nudge{margin-top:14px;display:flex;gap:9px;align-items:center;font-size:13px;padding:10px 12px;border-radius:12px;
+  background:rgba(251,113,133,.10);border:1px solid rgba(251,113,133,.35);color:#ffd7de}
+.nudge.safe{background:rgba(52,211,153,.10);border-color:rgba(52,211,153,.30);color:#c7f9e6}
+
+/* ---------- breakdown bars ---------- */
+.bars{display:flex;flex-direction:column;gap:12px;margin-top:4px}
+.bar .bl{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+.bar .bl b{font-family:var(--mono)}
+.track{height:9px;border-radius:999px;background:var(--surface2);overflow:hidden}
+.fill{height:100%;border-radius:999px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.f-level{background:var(--level)} .f-improve{background:var(--improve)} .f-consist{background:var(--consist)}
+.dot{width:8px;height:8px;border-radius:3px;display:inline-block;margin-inline-end:6px;vertical-align:middle}
+.d-level{background:var(--level)} .d-improve{background:var(--improve)} .d-consist{background:var(--consist)}
+
+/* streak + stat chips */
+.chips{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.chip{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+.chip .v{font-family:var(--disp);font-size:28px;line-height:1}
+.chip .k{font-size:11px;color:var(--muted);margin-top:3px}
+.flame{color:var(--consist)}
+
+/* ---------- buttons ---------- */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:none;border-radius:14px;
+  padding:15px;font-size:16px;font-weight:700;background:var(--accent);color:#0a0e18}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:var(--surface2);color:var(--text);border:1px solid var(--line)}
+.btn.sm{padding:10px 14px;font-size:14px;width:auto;border-radius:11px}
+
+/* ---------- exercise picker / log ---------- */
+.search{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:13px 14px;color:var(--text);font-size:15px;font-family:inherit}
+.search:focus{outline:none;border-color:var(--accent)}
+.exlist{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.ex{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:11px 13px;text-align:right;width:100%}
+.ex:active{border-color:var(--accent)}
+.exi{width:38px;height:38px;flex:none;border-radius:10px;display:grid;place-items:center;background:var(--surface2)}
+.ex .nm{font-weight:600;font-size:14px}
+.ex .mt{font-size:11px;color:var(--muted)}
+.badge{font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+
+/* set editor */
+.setrow{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center;margin-bottom:10px}
+.num{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:12px;color:var(--text);font-size:17px;text-align:center;font-family:var(--mono);width:100%}
+.num:focus{outline:none;border-color:var(--accent)}
+.field label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px;text-align:center}
+.iconbtn{background:var(--surface2);border:1px solid var(--line);border-radius:11px;width:44px;height:44px;display:grid;place-items:center;color:var(--releg)}
+.loggedset{display:flex;justify-content:space-between;padding:9px 12px;background:var(--surface2);border-radius:10px;margin-bottom:7px;font-size:14px}
+
+/* ---------- leaderboard ---------- */
+.season{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.lbrow{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:13px;background:var(--surface);border:1px solid var(--line);margin-bottom:7px;width:100%;text-align:right}
+.lbrow.you{border-color:var(--accent);background:linear-gradient(90deg,rgba(200,255,46,.08),var(--surface))}
+.lbrow .rk{font-family:var(--disp);font-size:20px;width:30px;text-align:center;color:var(--muted)}
+.lbrow.you .rk{color:var(--accent)}
+.lbrow .av{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:700;font-size:14px;color:#0a0e18;flex:none}
+.lbrow .who{flex:1;min-width:0}
+.lbrow .who .n{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lbrow .who .s{font-size:11px;color:var(--muted)}
+.lbrow .sc{font-family:var(--mono);font-weight:700;font-size:17px}
+.zone{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--faint);margin:12px 2px 8px}
+.zone .ln{flex:1;height:1px;background:var(--line)}
+.zone.promo{color:var(--promo)} .zone.releg{color:var(--releg)}
+
+/* ---------- profile / PRs ---------- */
+.kv{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px}
+.kv:last-child{border:none}
+.seg{display:flex;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+.seg button{flex:1;border:none;background:transparent;color:var(--muted);padding:9px;border-radius:9px;font-size:13px;font-weight:600}
+.seg button.on{background:var(--accent);color:#0a0e18}
+
+/* ---------- bottom nav ---------- */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:6;max-width:520px;margin:0 auto;
+  display:grid;grid-template-columns:repeat(4,1fr);background:rgba(18,24,41,.96);backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px))}
+.nav button{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--faint);font-size:11px;font-weight:600;padding:4px}
+.nav button.on{color:var(--accent)}
+.nav svg{width:23px;height:23px}
+
+/* ---------- modal / toast ---------- */
+.modal{position:fixed;inset:0;z-index:20;background:rgba(6,9,16,.72);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center}
+.modal[hidden]{display:none!important}
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:22px 22px 0 0;width:100%;max-width:520px;
+  padding:22px 20px calc(24px + env(safe-area-inset-bottom,0px));max-height:92%;overflow-y:auto}
+.sheet h2{font-family:var(--disp);font-size:26px;margin-bottom:4px}
+.formrow{margin:14px 0}
+.formrow label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+.pick{display:flex;gap:8px}
+.pick button{flex:1;background:var(--surface2);border:1px solid var(--line);color:var(--text);padding:12px;border-radius:12px;font-weight:600}
+.pick button.on{background:var(--accent);color:#0a0e18;border-color:var(--accent)}
+.toast{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);left:50%;transform:translateX(-50%) translateY(-20px);
+  z-index:30;background:var(--accent);color:#0a0e18;font-weight:700;padding:13px 20px;border-radius:14px;opacity:0;
+  transition:all .35s cubic-bezier(.2,.8,.2,1);pointer-events:none;box-shadow:0 10px 30px rgba(200,255,46,.25);max-width:90%;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.pr-emoji{font-size:20px}
+.explain{font-size:12.5px;color:var(--muted);line-height:1.55}
+.gt{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--muted);padding:9px 0;border-bottom:1px solid var(--line)}
+.gt:last-child{border:none}
+.gt svg{flex:none;margin-top:1px;color:var(--accent)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+a{color:var(--accent)}
+</style>
+
+<div id="app">
+  <div class="topbar">
+    <div class="brand"><span class="logo" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 9v6M20 9v6M7 6v12M17 6v12M7 12h10"/></svg>
+    </span><span class="name">LIFT<em>LEAGUE</em></span></div>
+    <button class="tierpill" id="tierPill" aria-label="הרמה שלך">—</button>
+  </div>
+
+  <!-- ============ DASHBOARD ============ -->
+  <div class="screen" id="scr-home">
+    <section>
+      <div class="hero">
+        <div class="row">
+          <div>
+            <div class="eyebrow">הציון השבועי שלך</div>
+            <div class="scoreBig" id="heroScore">0<small> נק'</small></div>
+          </div>
+          <button class="posbox" id="heroPos" aria-label="המיקום שלך בליגה">
+            <div class="p" id="heroRank">–</div>
+            <div class="of" id="heroOf">מתוך –</div>
+          </button>
+        </div>
+        <div class="nudge" id="heroNudge" hidden></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="eyebrow">פירוק הציון · שקוף לגמרי</div>
+      <div class="card">
+        <div class="bars" id="bars"></div>
+        <button class="btn ghost sm" style="margin-top:14px" id="whyBtn">למה זה הוגן? ⓘ</button>
+      </div>
+    </section>
+
+    <section>
+      <div class="chips">
+        <div class="chip"><div class="v flame" id="cStreak">0</div><div class="k">רצף 🔥</div></div>
+        <div class="chip"><div class="v" id="cBeat">0%</div><div class="k">מנצח ברמה שלך</div></div>
+        <div class="chip"><div class="v" id="cWorkouts">0</div><div class="k">אימונים העונה</div></div>
+      </div>
+    </section>
+
+    <section>
+      <button class="btn" id="goLogBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        רשום אימון
+      </button>
+    </section>
+  </div>
+
+  <!-- ============ LOG ============ -->
+  <div class="screen" id="scr-log" hidden>
+    <div id="logPick">
+      <div class="eyebrow">בחר תרגיל</div>
+      <input class="search" id="exSearch" placeholder="חיפוש תרגיל…" autocomplete="off">
+      <div class="exlist" id="exList"></div>
+    </div>
+    <div id="logEdit" hidden></div>
+    <section id="todayWrap" style="margin-top:20px">
+      <div class="eyebrow">נרשם היום</div>
+      <div class="card tight" id="todayList"><div class="muted" style="text-align:center;padding:8px">עדיין לא נרשם אימון היום</div></div>
+    </section>
+  </div>
+
+  <!-- ============ LEAGUE ============ -->
+  <div class="screen" id="scr-league" hidden>
+    <div class="season">
+      <div>
+        <div class="eyebrow" style="margin:0">הליגה שלך</div>
+        <div class="disp" id="leagueTier" style="font-size:26px">—</div>
+      </div>
+      <div style="text-align:left">
+        <div class="mono" id="seasonLeft" style="font-size:20px;color:var(--accent)">–</div>
+        <div class="faint" style="font-size:11px">לסיום העונה</div>
+      </div>
+    </div>
+    <div class="card tight" style="margin-bottom:14px;display:flex;gap:9px;align-items:center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg>
+      <div style="font-size:12.5px" class="muted">מתחרים מול <b style="color:var(--text)">30 אנשים ברמה שלך</b> — לא מול העולם. גם ההתקדמות, לא רק הכוח המוחלט, נספרת.</div>
+    </div>
+    <div id="board"></div>
+  </div>
+
+  <!-- ============ PROFILE ============ -->
+  <div class="screen" id="scr-me" hidden>
+    <section>
+      <div class="eyebrow">הפרופיל שלי</div>
+      <div class="card" id="meCard"></div>
+    </section>
+    <section>
+      <div class="eyebrow">שיאים אישיים (e1RM מוערך)</div>
+      <div class="card tight" id="prList"><div class="muted" style="text-align:center;padding:8px">אין שיאים עדיין — רשום אימון</div></div>
+    </section>
+    <section>
+      <div class="eyebrow">מנוע ניקוד (הדגמת ה-façade)</div>
+      <div class="card">
+        <div class="explain" style="margin-bottom:10px">אותה אפליקציה, שני מנועי ניקוד מאחורי אותו interface. כך שומרים על שני הכיוונים פתוחים:</div>
+        <div class="seg" id="modeSeg">
+          <button data-mode="serious" class="on">רציני · DOTS+z</button>
+          <button data-mode="mass">מון · XP</button>
+        </div>
+      </div>
+    </section>
+    <section>
+      <button class="btn ghost sm" id="resetBtn" style="width:100%">איפוס נתונים (הדגמה)</button>
+    </section>
+  </div>
+
+  <nav class="nav" id="nav">
+    <button data-scr="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>בית</button>
+    <button data-scr="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>רשום</button>
+    <button data-scr="league"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>ליגה</button>
+    <button data-scr="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg>אני</button>
+  </nav>
+</div>
+
+<!-- onboarding / why sheets -->
+<div class="modal" id="modal" hidden><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   LiftLeague — full client-side demo app.
+   Scoring engine ported 1:1 from liftleague-core (TS).
+   ============================================================ */
+
+/* ---------- storage helpers (safe) ---------- */
+const KEY="liftleague.v1";
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||null}catch(e){return null}}
+function save(s){try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}}
+
+/* ---------- scoring engine ---------- */
+const EPLEY=(w,r)=>w*(1+r/30);
+const BRZYCKI=(w,r)=>r>=37?w*36:w*(36/(37-r));
+function estimate1RM(w,r){if(w<=0||r<=0)return 0;if(r===1)return w;const c=Math.min(r,10);return (EPLEY(w,c)+BRZYCKI(w,c))/2;}
+const DOTS_M={a:-0.000001093,b:0.0007391293,c:-0.1918759221,d:24.0900756,e:-307.75076};
+const DOTS_F={a:-0.0000010706,b:0.0005158568,c:-0.1126655495,d:13.6175032,e:-57.96288};
+function dots(lift,bw,sex){if(lift<=0||bw<=0)return 0;const k=sex==="female"?DOTS_F:DOTS_M;
+  const d=k.a*bw**4+k.b*bw**3+k.c*bw**2+k.d*bw+k.e;return d<=0?0:lift*500/d;}
+const strengthLevel=dv=>Math.max(0,Math.min(100,dv/500*100));
+function expected(taWeeks){const NR=0.06,FR=0.002,DW=26;const t=Math.max(0,taWeeks);
+  const w=FR+(NR-FR)*Math.exp(-t/DW);return {rate:w,sd:Math.max(0.005,w*0.6)};}
+const clip=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
+const WCAP=0.08;
+const WEIGHTS={level:0.30,improve:0.50,consist:0.20};
+
+/* serious scorer (DOTS + z-score) */
+function scoreSerious(a,windowSets,prior,planned){
+  const bestNow={};let bestDots=0;
+  for(const s of windowSets){const e=estimate1RM(s.weightKg,s.reps);
+    if(e>(bestNow[s.exerciseId]||0))bestNow[s.exerciseId]=e;
+    if(s.loadable){bestDots=Math.max(bestDots,dots(e,a.bodyweightKg,a.sex));}}
+  const level=strengthLevel(bestDots);
+  const ex=expected(a.trainingAgeWeeks);const zs=[];
+  for(const id in bestNow){const p=prior[id];if(!p||p<=0)continue;
+    const raw=bestNow[id]/p-1;const capped=Math.min(raw,WCAP);zs.push((capped-ex.rate)/ex.sd);}
+  const meanZ=zs.length?zs.reduce((x,y)=>x+y,0)/zs.length:0;
+  const improve=clip(50+15*meanZ,0,100);
+  const days=new Set(windowSets.map(s=>s.performedAt.slice(0,10))).size;
+  const consist=clip(days/Math.max(1,planned)*100,0,100);
+  const value=WEIGHTS.level*level+WEIGHTS.improve*improve+WEIGHTS.consist*consist;
+  return {value:Math.round(value*10)/10,level,improve,consist,bestDots,meanZ,days,provider:"serious"};
+}
+/* mass scorer (XP) — normalized to ~0-100 band for the same UI */
+function scoreMass(a,windowSets,prior,planned){
+  let vol=0;const bestNow={};
+  for(const s of windowSets){vol+=Math.max(0,s.weightKg)*Math.max(0,s.reps);
+    const e=estimate1RM(s.weightKg,s.reps);if(e>(bestNow[s.exerciseId]||0))bestNow[s.exerciseId]=e;}
+  let pr=0;for(const id in bestNow){if(bestNow[id]>(prior[id]||0)&&(prior[id]||0)>0)pr++;}
+  const days=new Set(windowSets.map(s=>s.performedAt.slice(0,10))).size;
+  const streakMult=Math.min(1.5,1+days*0.1);
+  const xp=(vol/1000*10+pr*25)*streakMult;
+  // map to same visual bars: volume->improve-ish, pr->level-ish, streak->consist
+  const level=clip(pr*20,0,100), improve=clip(vol/40,0,100), consist=clip(days/Math.max(1,planned)*100,0,100);
+  return {value:Math.round(xp),level,improve,consist,days,pr,provider:"mass",xp:Math.round(xp)};
+}
+
+/* ---------- seeded RNG for stable opponents ---------- */
+function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+/* ---------- app state ---------- */
+let EX=[];               // exercise catalog
+let S=null;              // persisted state
+let mode="serious";
+const MUSCLE_COLORS={quadriceps:"#c8ff2e",chest:"#fb7185",shoulders:"#38e0d6","middle back":"#a78bfa",lats:"#a78bfa",
+  hamstrings:"#f5a524",glutes:"#f5a524","lower back":"#f59e0b",abdominals:"#60a5fa",triceps:"#f472b6",biceps:"#f472b6",
+  forearms:"#94a3b8",traps:"#34d399",other:"#8b95ad"};
+const TIERS=["ברונזה","כסף","זהב","פלטינה","יהלום"];
+const NAMES=["איתי","נועה","דניאל","מיכל","יואב","רון","שירה","עומר","טל","ליאור","גיא","מאיה","אורי","עדן","ניר",
+  "יעל","אסף","הדר","בר","רועי","נטע","עמית","שחר","קרן","דור","אלה","גל","תום","זיו","סתיו"];
+
+/* ---------- season / opponents ---------- */
+function weekStart(d){const x=new Date(d);const day=(x.getDay()+6)%7;x.setDate(x.getDate()-day);x.setHours(0,0,0,0);return x.getTime();}
+function ensureSeason(){
+  const now=Date.now();
+  if(!S.seasonStart||now>S.seasonEnd){
+    S.seasonStart=weekStart(now);S.seasonEnd=S.seasonStart+7*864e5;
+    // snapshot prior bests at season start
+    S.priorBest=Object.assign({},S.prBest||{});
+    // (re)generate opponents for this season, clustered around user's tier
+    const rng=mulberry32(Math.floor(S.seasonStart/864e5)+ (S.tierIdx||1)*7);
+    S.opps=[];const shuffled=[...NAMES].sort(()=>rng()-0.5);
+    for(let i=0;i<29;i++){
+      const base=42+ (S.tierIdx||1)*3 + (rng()*34-6);      // score band by tier
+      const lvl=clip(base*0.5+rng()*30,5,95), imp=clip(35+rng()*55,0,100), con=clip(45+rng()*55,0,100);
+      const val=Math.round((WEIGHTS.level*lvl+WEIGHTS.improve*imp+WEIGHTS.consist*con)*10)/10;
+      S.opps.push({name:shuffled[i%shuffled.length]+" "+String.fromCharCode(1488+(i%22)),
+        level:lvl,improve:imp,consist:con,value:val,bw:60+Math.round(rng()*45),sex:rng()>0.5?"male":"female"});
+    }
+    save(S);
+  }
+}
+function seasonSets(){return (S.sets||[]).filter(s=>s.t>=S.seasonStart&&s.t<S.seasonEnd);}
+function myScore(){
+  const a={sex:S.sex,bodyweightKg:S.bw,trainingAgeWeeks:S.ta};
+  const ws=seasonSets().map(s=>({exerciseId:s.ex,weightKg:s.w,reps:s.r,loadable:true,performedAt:new Date(s.t).toISOString()}));
+  const fn=mode==="serious"?scoreSerious:scoreMass;
+  return fn(a,ws,S.priorBest||{},3);
+}
+function standings(){
+  const me=myScore();
+  const rows=[{you:true,name:S.name,value:me.value,level:me.level,improve:me.improve,consist:me.consist,bw:S.bw,sex:S.sex}]
+    .concat((S.opps||[]).map(o=>({...o,you:false})));
+  rows.sort((a,b)=>b.value-a.value);
+  return {rows,me};
+}
+
+/* ---------- rendering ---------- */
+const $=id=>document.getElementById(id);
+function fmt(n){return (Math.round(n*10)/10).toLocaleString("he-IL");}
+
+function renderHome(){
+  const {rows,me}=standings();
+  const rank=rows.findIndex(r=>r.you)+1, n=rows.length;
+  $("heroScore").innerHTML=`${mode==="serious"?fmt(me.value):me.value}<small> ${mode==="serious"?"נק'":"XP"}</small>`;
+  $("heroRank").textContent="#"+rank; $("heroOf").textContent="מתוך "+n;
+  // nudge: relegation (bottom 15%) or promotion (top 15%)
+  const promoCut=Math.ceil(n*0.15), relegCut=n-Math.ceil(n*0.15);
+  const nu=$("heroNudge");const daysLeft=Math.max(0,Math.ceil((S.seasonEnd-Date.now())/864e5));
+  if(rank>relegCut){nu.hidden=false;nu.className="nudge";
+    nu.innerHTML=`⚠️ אתה במקום ${rank} מתוך ${n}. עוד ${daysLeft} ימים לסוף העונה — אימון אחד יכול להוציא אותך מאזור הירידה.`;}
+  else if(rank<=promoCut){nu.hidden=false;nu.className="nudge safe";
+    nu.innerHTML=`🔥 אתה באזור העלייה (מקום ${rank})! עוד ${daysLeft} ימים — תחזיק מעמד ותעלה ל${TIERS[Math.min(TIERS.length-1,(S.tierIdx||1)+1)]}.`;}
+  else{nu.hidden=false;nu.className="nudge safe";nu.innerHTML=`מקום ${rank} מתוך ${n}. ${daysLeft} ימים לסוף העונה — אתה באמצע, יש לאן לטפס.`;}
+  // bars
+  const bars=[["רמת כוח (DOTS)","f-level","d-level",me.level],["התקדמות (מול הצפוי לך)","f-improve","d-improve",me.improve],["עקביות","f-consist","d-consist",me.consist]];
+  $("bars").innerHTML=bars.map(([lab,f,d,v])=>`<div class="bar"><div class="bl"><span><span class="dot ${d}"></span>${lab}</span><b>${Math.round(v)}</b></div><div class="track"><div class="fill ${f}" style="width:${Math.round(v)}%"></div></div></div>`).join("");
+  // chips
+  $("cStreak").textContent=streakDays();
+  const beat=Math.round((n-rank)/(n-1)*100);$("cBeat").textContent=(isFinite(beat)?beat:0)+"%";
+  $("cWorkouts").textContent=new Set(seasonSets().map(s=>s.wid)).size;
+  $("tierPill").innerHTML=`<span class="dot" style="background:var(--accent)"></span>${TIERS[S.tierIdx||1]}`;
+}
+
+function streakDays(){
+  const set=new Set((S.sets||[]).map(s=>new Date(s.t).toISOString().slice(0,10)));
+  let streak=0;let d=new Date();d.setHours(0,0,0,0);
+  // allow today or yesterday to start the streak
+  if(!set.has(d.toISOString().slice(0,10))){d.setDate(d.getDate()-1);if(!set.has(d.toISOString().slice(0,10)))return 0;}
+  while(set.has(d.toISOString().slice(0,10))){streak++;d.setDate(d.getDate()-1);}
+  return streak;
+}
+
+function renderLeague(){
+  ensureSeason();
+  const {rows}=standings();const n=rows.length;
+  $("leagueTier").textContent=TIERS[S.tierIdx||1];
+  const daysLeft=Math.max(0,Math.ceil((S.seasonEnd-Date.now())/864e5));
+  $("seasonLeft").textContent=daysLeft+"ד'";
+  const promoCut=Math.ceil(n*0.15), relegStart=n-Math.ceil(n*0.15)+1;
+  let html="";
+  rows.forEach((r,i)=>{
+    const rank=i+1;
+    if(rank===1)html+=`<div class="zone promo"><span class="ln"></span>אזור עלייה ↑<span class="ln"></span></div>`;
+    if(rank===promoCut+1)html+=`<div class="zone"><span class="ln"></span>שמירה על המקום<span class="ln"></span></div>`;
+    if(rank===relegStart)html+=`<div class="zone releg"><span class="ln"></span>אזור ירידה ↓<span class="ln"></span></div>`;
+    const col=r.you?"var(--accent)":stringColor(r.name);
+    html+=`<button class="lbrow ${r.you?"you":""}" data-opp="${i}">
+      <span class="rk">${rank}</span>
+      <span class="av" style="background:${col}">${(r.name||"?").trim().charAt(0)}</span>
+      <span class="who"><span class="n">${r.you?"אתה":r.name}</span><span class="s">משקל גוף ${r.bw||"?"} ק"ג</span></span>
+      <span class="sc">${mode==="serious"?fmt(r.value):r.value}</span></button>`;
+  });
+  $("board").innerHTML=html;
+}
+function stringColor(s){let h=0;for(let i=0;i<(s||"").length;i++)h=(h*31+s.charCodeAt(i))%360;return `hsl(${h} 55% 62%)`;}
+
+function renderExList(q){
+  q=(q||"").trim().toLowerCase();
+  const list=EX.filter(e=>!q||e.name.toLowerCase().includes(q)||(e.muscle||"").includes(q)).slice(0,40);
+  $("exList").innerHTML=list.map(e=>{
+    const c=MUSCLE_COLORS[e.muscle]||MUSCLE_COLORS.other;
+    return `<button class="ex" data-ex="${e.id}">
+      <span class="exi" style="border:1px solid ${c}44">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round"><path d="M4 9v6M20 9v6M7 6v12M17 6v12M7 12h10"/></svg>
+      </span>
+      <span class="who" style="flex:1"><span class="nm">${e.name}</span><span class="mt">${heMuscle(e.muscle)} · ${heEquip(e.equipment)}</span></span>
+      <span class="badge">${e.mechanic==="compound"?"מורכב":"בידוד"}</span></button>`;
+  }).join("")|| `<div class="muted" style="text-align:center;padding:20px">לא נמצא תרגיל</div>`;
+}
+const HE_M={quadriceps:"רגליים",chest:"חזה",shoulders:"כתפיים","middle back":"גב",lats:"גב רחב",hamstrings:"ירך אחורי",glutes:"ישבן","lower back":"גב תחתון",abdominals:"בטן",triceps:"יד אחורית",biceps:"יד קדמית",forearms:"אמות",traps:"טרפזים",other:"אחר"};
+const HE_E={barbell:"מוט",dumbbell:"משקולות",machine:"מכונה",cable:"כבל",kettlebells:"קטלבל"};
+const heMuscle=m=>HE_M[m]||m||"";const heEquip=e=>HE_E[e]||e||"";
+
+let curEx=null,curSets=[];
+function openEdit(id){
+  curEx=EX.find(e=>e.id===id);curSets=[{w:"",r:""}];
+  $("logPick").hidden=true;$("logEdit").hidden=false;renderEdit();
+}
+function renderEdit(){
+  const c=MUSCLE_COLORS[curEx.muscle]||MUSCLE_COLORS.other;
+  $("logEdit").innerHTML=`
+    <button class="btn ghost sm" id="backPick" style="margin-bottom:14px">← חזרה לתרגילים</button>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <span class="exi" style="width:44px;height:44px;border:1px solid ${c}55"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round"><path d="M4 9v6M20 9v6M7 6v12M17 6v12M7 12h10"/></svg></span>
+        <div><div style="font-weight:700">${curEx.name}</div><div class="mt muted" style="font-size:12px">${heMuscle(curEx.muscle)} · ${heEquip(curEx.equipment)}</div></div>
+      </div>
+      <div id="setRows"></div>
+      <button class="btn ghost sm" id="addSet" style="width:100%;margin:6px 0 14px">+ הוסף סט</button>
+      <button class="btn" id="saveWo">שמור אימון</button>
+      <div class="explain" id="safetyNote" style="margin-top:10px;text-align:center"></div>
+    </div>`;
+  drawSets();
+  $("backPick").onclick=()=>{$("logEdit").hidden=true;$("logPick").hidden=false;};
+  $("addSet").onclick=()=>{curSets.push({w:"",r:""});drawSets();};
+  $("saveWo").onclick=saveWorkout;
+}
+function drawSets(){
+  $("setRows").innerHTML=curSets.map((s,i)=>`
+    <div class="setrow">
+      <div class="field"><label>משקל (ק"ג)</label><input class="num" inputmode="decimal" data-i="${i}" data-k="w" value="${s.w}"></div>
+      <div class="field"><label>חזרות</label><input class="num" inputmode="numeric" data-i="${i}" data-k="r" value="${s.r}"></div>
+      <button class="iconbtn" data-del="${i}" ${curSets.length<=1?'style="opacity:.3"':''}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
+    </div>`).join("");
+  $("setRows").querySelectorAll("input").forEach(inp=>inp.oninput=e=>{curSets[+e.target.dataset.i][e.target.dataset.k]=e.target.value;updateSafety();});
+  $("setRows").querySelectorAll("[data-del]").forEach(b=>b.onclick=e=>{if(curSets.length<=1)return;curSets.splice(+e.currentTarget.dataset.del,1);drawSets();});
+  updateSafety();
+}
+function updateSafety(){
+  const prior=(S.prBest||{})[curEx.id]||0;let best=0;
+  curSets.forEach(s=>{const w=parseFloat(s.w),r=parseInt(s.r);if(w>0&&r>0)best=Math.max(best,estimate1RM(w,r));});
+  const note=$("safetyNote");if(!note)return;
+  if(prior>0&&best>prior*(1+WCAP)){note.style.color="var(--consist)";
+    note.innerHTML=`🛡️ קפיצה של ${Math.round((best/prior-1)*100)}% — לניקוד ייספרו עד +8%/שבוע (בטיחות). כל הכבוד, רק תיזהר מפציעה.`;}
+  else note.innerHTML="";
+}
+function saveWorkout(){
+  const valid=curSets.filter(s=>parseFloat(s.w)>0&&parseInt(s.r)>0);
+  if(!valid.length){toast("הזן לפחות סט אחד תקין");return;}
+  ensureSeason();
+  const wid="w"+Date.now();const t=Date.now();let bestE=0;
+  valid.forEach(s=>{const w=parseFloat(s.w),r=parseInt(s.r);const e=estimate1RM(w,r);bestE=Math.max(bestE,e);
+    S.sets.push({wid,ex:curEx.id,w,r,t});});
+  // PR check
+  const prior=(S.prBest||{})[curEx.id]||0;let isPR=false;
+  if(bestE>prior){S.prBest=S.prBest||{};S.prBest[curEx.id]=Math.round(bestE*10)/10;isPR=prior>0;}
+  save(S);
+  // back to picker
+  $("logEdit").hidden=true;$("logPick").hidden=false;$("exSearch").value="";renderExList("");
+  renderToday();renderHome();
+  if(isPR)prCelebrate(curEx.name,Math.round(bestE*10)/10);
+  else toast("נשמר! 💪 e1RM: "+Math.round(bestE)+" ק\"ג");
+}
+function renderToday(){
+  const today=new Date().toISOString().slice(0,10);
+  const mine=(S.sets||[]).filter(s=>new Date(s.t).toISOString().slice(0,10)===today);
+  if(!mine.length){$("todayList").innerHTML='<div class="muted" style="text-align:center;padding:8px">עדיין לא נרשם אימון היום</div>';return;}
+  const byEx={};mine.forEach(s=>{(byEx[s.ex]=byEx[s.ex]||[]).push(s);});
+  $("todayList").innerHTML=Object.entries(byEx).map(([ex,ss])=>{
+    const name=(EX.find(e=>e.id===ex)||{}).name||ex;
+    return `<div class="loggedset"><span>${name}</span><span class="mono muted">${ss.map(s=>s.w+"×"+s.r).join(" · ")}</span></div>`;
+  }).join("");
+}
+
+function renderMe(){
+  $("meCard").innerHTML=`
+    <div class="kv"><span class="muted">שם</span><span>${S.name}</span></div>
+    <div class="kv"><span class="muted">מין</span><span>${S.sex==="male"?"זכר":"נקבה"}</span></div>
+    <div class="kv"><span class="muted">משקל גוף</span><span class="mono">${S.bw} ק"ג</span></div>
+    <div class="kv"><span class="muted">ותק אימונים</span><span>${heTA(S.ta)}</span></div>
+    <div class="kv"><span class="muted">ליגה</span><span>${TIERS[S.tierIdx||1]}</span></div>`;
+  const prs=Object.entries(S.prBest||{});
+  $("prList").innerHTML=prs.length?prs.sort((a,b)=>b[1]-a[1]).map(([id,v])=>{
+    const name=(EX.find(e=>e.id===id)||{}).name||id;
+    return `<div class="loggedset"><span>${name}</span><span class="mono" style="color:var(--accent)">${v} ק"ג</span></div>`;
+  }).join(""):'<div class="muted" style="text-align:center;padding:8px">אין שיאים עדיין — רשום אימון</div>';
+}
+function heTA(w){if(w<=12)return "מתחיל ("+w+" שב')";if(w<=156)return "בינוני ("+Math.round(w/4.3)+" חוד')";return "מתקדם ("+(Math.round(w/52*10)/10)+" שנים)";}
+
+/* ---------- navigation ---------- */
+function show(scr){
+  ["home","log","league","me"].forEach(s=>{$("scr-"+s).hidden=(s!==scr);});
+  document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.scr===scr));
+  if(scr==="home")renderHome();
+  if(scr==="league")renderLeague();
+  if(scr==="me")renderMe();
+  if(scr==="log"){renderToday();$("logEdit").hidden=true;$("logPick").hidden=false;renderExList($("exSearch").value);}
+  $("scr-"+scr).scrollTop=0;
+}
+
+/* ---------- toast + PR celebration ---------- */
+let toastT;
+function toast(msg){const t=$("toast");t.innerHTML=msg;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2600);}
+function prCelebrate(name,e){
+  toast(`<span class="pr-emoji">🏆</span> שיא אישי חדש!<br>${name} · ${e} ק"ג e1RM`);
+  const t=$("toast");t.style.background="linear-gradient(90deg,#c8ff2e,#38e0d6)";
+  setTimeout(()=>{t.style.background="";},2800);
+}
+
+/* ---------- why-fair sheet ---------- */
+function openWhy(){
+  const gts=[
+    ["תחרות מול דומים לך","אתה בליגה של 30 אנשים ברמת כוח דומה — לא מול מרימי-על. תמיד יש למי להשוות בטווח בר-השגה."],
+    ["ניצחון אישי מובטח","כל שיא אישי (PR) נחגג בנפרד מהדירוג. גם אם אתה אחרון בליגה — ניצחת את עצמך של אתמול."],
+    ["ציון שקוף ורב-גורמי","הציון מורכב מרמת כוח + התקדמות + עקביות. אי אפשר 'לשחק' רק מספר אחד (הגנת Goodhart)."],
+    ["הוגן בין רמות","ההתקדמות נמדדת מול מה שצפוי למישהו בוותק שלך — כך מתחיל וּותיק מתחרים באמת, בלי יתרון מובנה."],
+    ["בטיחות מובנית","קפיצת משקל מסוכנת נחתכת לתקרת +8%/שבוע בניקוד — אין תמריץ ל-ego-lifting."],
+  ];
+  openSheet(`<h2>למה זה הוגן?</h2><div class="explain" style="margin-bottom:14px">חמשת עקרונות תורת המשחקים שמאחורי הניקוד:</div>
+    ${gts.map(([t,d])=>`<div class="gt"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg><div><b style="color:var(--text)">${t}</b><br>${d}</div></div>`).join("")}
+    <button class="btn" id="closeSheet" style="margin-top:18px">הבנתי</button>`);
+}
+
+/* ---------- onboarding ---------- */
+function openOnboard(){
+  const st={sex:"male",bw:75,ta:8};
+  openSheet(`<h2>ברוך הבא ל-LiftLeague</h2>
+    <div class="explain">כמה פרטים כדי לחשב לך ניקוד הוגן ולשבץ לליגה הנכונה.</div>
+    <div class="formrow"><label>איך קוראים לך?</label><input class="search" id="obName" placeholder="השם שלך" autocomplete="off"></div>
+    <div class="formrow"><label>מין (לנרמול DOTS)</label><div class="pick" id="obSex">
+      <button data-v="male" class="on">זכר</button><button data-v="female">נקבה</button></div></div>
+    <div class="formrow"><label>משקל גוף: <b class="mono" id="obBwv">75</b> ק"ג</label>
+      <input type="range" min="40" max="150" value="75" id="obBw" style="width:100%;accent-color:var(--accent)"></div>
+    <div class="formrow"><label>כמה זמן אתה מתאמן?</label><div class="pick" id="obTa" style="flex-wrap:wrap">
+      <button data-v="8" class="on">מתחיל</button><button data-v="78">שנה-שנתיים</button><button data-v="260">ותיק (3+ שנים)</button></div></div>
+    <button class="btn" id="obGo" style="margin-top:8px">יאללה, מתחילים 💪</button>`,true);
+  $("obBw").oninput=e=>{st.bw=+e.target.value;$("obBwv").textContent=st.bw;};
+  $("obSex").querySelectorAll("button").forEach(b=>b.onclick=()=>{st.sex=b.dataset.v;$("obSex").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));});
+  $("obTa").querySelectorAll("button").forEach(b=>b.onclick=()=>{st.ta=+b.dataset.v;$("obTa").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));});
+  $("obGo").onclick=()=>{
+    const nm=($("obName").value||"").trim()||"אלוף";
+    S={name:nm,sex:st.sex,bw:st.bw,ta:st.ta,tierIdx:st.ta>=260?3:st.ta>=78?2:1,sets:[],prBest:{},priorBest:{}};
+    ensureSeason();save(S);closeSheet();show("home");toast("ברוך הבא, "+nm+"! רשום אימון ראשון 🎯");
+  };
+}
+
+/* ---------- sheet helpers ---------- */
+function openSheet(html,noClose){$("sheet").innerHTML=html;$("modal").hidden=false;
+  const c=$("closeSheet");if(c)c.onclick=closeSheet;
+  if(!noClose)$("modal").onclick=e=>{if(e.target===$("modal"))closeSheet();};else $("modal").onclick=null;}
+function closeSheet(){$("modal").hidden=true;}
+
+/* ---------- boot ---------- */
+async function boot(){
+  try{EX=await (await fetch("./exercises.json")).json();}catch(e){EX=[];}
+  S=load();
+  // nav
+  document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>show(b.dataset.scr));
+  $("goLogBtn").onclick=()=>show("log");
+  $("whyBtn").onclick=openWhy;
+  $("exSearch").oninput=e=>renderExList(e.target.value);
+  $("exList").onclick=e=>{const b=e.target.closest("[data-ex]");if(b)openEdit(b.dataset.ex);};
+  $("board").onclick=e=>{const b=e.target.closest("[data-opp]");if(b)openOpp(+b.dataset.opp);};
+  $("heroPos").onclick=()=>show("league");
+  $("resetBtn").onclick=()=>{try{localStorage.removeItem(KEY)}catch(e){}S=null;openOnboard();};
+  $("modeSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{mode=b.dataset.mode;
+    $("modeSeg").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+    toast(mode==="serious"?"מנוע רציני: DOTS + z-score":"מנוע מון: XP + streak");renderHome();});
+  if(!S||!S.name){openOnboard();}else{ensureSeason();show("home");}
+}
+function openOpp(i){
+  const {rows}=standings();const r=rows[i];if(!r)return;
+  const bars=[["רמת כוח","f-level",r.level],["התקדמות","f-improve",r.improve],["עקביות","f-consist",r.consist]];
+  openSheet(`<h2>${r.you?"אתה":r.name}</h2>
+    <div class="explain" style="margin-bottom:12px">מקום ${i+1} · משקל גוף ${r.bw||"?"} ק"ג · ציון ${mode==="serious"?fmt(r.value):r.value}</div>
+    <div class="bars">${bars.map(([l,f,v])=>`<div class="bar"><div class="bl"><span>${l}</span><b>${Math.round(v)}</b></div><div class="track"><div class="fill ${f}" style="width:${Math.round(v)}%"></div></div></div>`).join("")}</div>
+    <div class="explain" style="margin-top:14px">אתם מתחרים על אותו ציר — כמה מיצית את עצמך השבוע ביחס למי שאתה, לא על הכוח המוחלט.</div>
+    <button class="btn" id="closeSheet" style="margin-top:16px">סגור</button>`);
+}
+boot();
+</script>
